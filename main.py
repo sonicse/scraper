@@ -1,38 +1,20 @@
-import urllib2
-from HTMLParser import HTMLParser
-from HTMLParser import HTMLParseError
-import requests
-
-skip_tags = {'script', 'head', 'link', 'meta'}
-
-class Parser(HTMLParser):
-    def __init__(self):
-        HTMLParser.__init__(self)
-        self.is_content = False
-
-    def handle_starttag(self, tag, attrs):
-        self.is_content = tag not in skip_tags
-        #if tag not in skip_tags:
-            #for key, value in attrs:
-            #    if key =='id' and value == 'foo':
-                    #self.is_content = True
-
-    def handle_data(self, data):
-        if self.is_content:
-            print data
-
-    def handle_endtag(self, tag):
-        self.is_content = False
+import urllib.request
+from urllib.error import URLError, HTTPError
+import parser2
 
 url = 'https://lenta.ru/news/2016/08/04/peskov_medved'
-#content = urllib2.urlopen(url).read()
-content = requests.get(url)
-
-parser = Parser()
-
+user_agent = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'
+headers = {'User-Agent': user_agent}
+req = urllib.request.Request(url, None, headers)
 try:
+    with urllib.request.urlopen(req) as response:
+        content = response.read().decode('utf-8')
+    parser = parser2.Parser()
     parser.feed(content)
-except HTMLParseError, e:
-    warnings.warn(RuntimeWarning(
-        "Python's built-in HTMLParser error."))
-    raise e
+
+except HTTPError as e:
+    print('The server couldn\'t fulfill the request.')
+    print('Error code: ', e.code)
+except URLError as e:
+    print('We failed to reach a server.')
+    print('Reason: ', e.reason)
